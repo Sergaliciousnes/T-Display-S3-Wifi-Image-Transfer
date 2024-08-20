@@ -77,4 +77,4 @@ Modify WebSockets Library
  - Change WEBSOCKETS_MAX_DATA_SIZE (15 * 1024) → WEBSOCKETS_MAX_DATA_SIZE (64 * 1024) under ESP32
  - Open server.py in a text editor
  - Change max_frame_size = 1024*15 → max_frame_size = 1024*64
-   ![](websockets_h_edit.png)
+   ![](images/websockets_h_edit.png)
