@@ -822,9 +822,13 @@ void setup(void)
     });
 
     button2.attachClick([]() {
-        menu_option_index += 1;
-        if (menu_option_index >= menu_option_count) {
-            menu_option_index = 0;
+        if (menu_index == 0) {
+            time_since_last_activity = 0;
+        } else {
+            menu_option_index += 1;
+            if (menu_option_index >= menu_option_count) {
+                menu_option_index = 0;
+            }
         }
     });
 
