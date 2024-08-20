@@ -14,7 +14,7 @@ local_ip = socket.gethostbyname(socket.gethostname())
 
 # size is limited to 1024*15 by default! see github readme for instructions to increase this limit!
 # a higher max_frame_size will result in much faster data transfers
-max_frame_size = 1024*64
+max_frame_size = 1024*15
 
 sessions = {}
 counter = 0
