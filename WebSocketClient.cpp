@@ -792,7 +792,7 @@ void setup(void)
     sprite.fillSprite(TFT_GREEN); delay(250); draw_frame();
     sprite.fillSprite(TFT_BLUE); delay(250); draw_frame();
 
-    WM.addAP("DSMode", "1ktjhs2bo12qkcgm");
+    WM.addAP("YourSSID", "YourPass");
 
     while(WM.run() != WL_CONNECTED) {
 		delay(100);
