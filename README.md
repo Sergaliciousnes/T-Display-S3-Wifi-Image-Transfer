@@ -74,7 +74,7 @@ Basic Usage
 
 Modify WebSockets Library
  - In VSCode Explorer expand the ".pio" folder → expand "libdeps" → expand "T-Display" → expand WebSockets → Open WebSockets.h
- - Change WEBSOCKETS_MAX_DATA_SIZE (15 * 1024) → WEBSOCKETS_MAX_DATA_SIZE (64 * 1024) under ESP32
+ - Change WEBSOCKETS_MAX_DATA_SIZE (15 \* 1024) → WEBSOCKETS_MAX_DATA_SIZE (64 \* 1024) under ESP32
  - Open server.py in a text editor
- - Change max_frame_size = 1024*15 → max_frame_size = 1024*64
+ - Change max_frame_size = 1024\*15 → max_frame_size = 1024\*64
    ![](images/websockets_h_edit.png)
