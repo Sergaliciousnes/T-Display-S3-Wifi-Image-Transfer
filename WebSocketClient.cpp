@@ -43,7 +43,10 @@ TFT_eSprite text_sprite = TFT_eSprite(&tft);
 WiFiMulti WM;
 WebSocketsClient webSocket;
 
+const char* wifi_ssid     = "YourSSID";
+const char* wifi_password = "YourPassword";
 
+const char* ws_local_ip   = "192.168.1.115";
 
 char text[((int)HEIGHT/9)+1][256];
 uint8_t textIndex = 0;
@@ -792,7 +795,7 @@ void setup(void)
     sprite.fillSprite(TFT_GREEN); delay(250); draw_frame();
     sprite.fillSprite(TFT_BLUE); delay(250); draw_frame();
 
-    WM.addAP("YourSSID", "YourPass");
+    WM.addAP(wifi_ssid, wifi_password);
 
     while(WM.run() != WL_CONNECTED) {
 		delay(100);
@@ -800,7 +803,7 @@ void setup(void)
 	}
 
     // server address, port and URL
-	webSocket.begin("192.168.1.115", 8765, "/");
+	webSocket.begin(ws_local_ip, 8765, "/");
 
 	// event handler
 	webSocket.onEvent(webSocketEvent);
