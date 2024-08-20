@@ -12,7 +12,9 @@ Clone Repo
 
 Open in VSCode
  - Open the repo in Visual Studio Code
- - Install the PlatformIO Extension
+ - > Click on the extensions tab in the left column → search platformIO → install the first plug-in
+ - > Click Platforms → Embedded → Search Espressif 32 in the input box → Select the corresponding firmware installation
+
 
 Add WebSockets Library
  - In VSCode, Open the PIO Home (The home button bottom left of VSCode window)
