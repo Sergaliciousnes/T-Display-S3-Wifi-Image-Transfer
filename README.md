@@ -40,4 +40,6 @@ Modify Code for your Platform
 Modify platformio.ini
  - In the Explorer tab in VSCode open the platformio.ini file
  - (AMOLED ONLY) change src_dir = to src_dir = examples/WebSocketClient (use the name of the folder you created earlier)
+   ![](images/amoled_pio_env.png)
  - (LCD ONLY) change default_envs = to default_envs = WebSocketClient (use the name of the folder you created earlier)
+   ![](images/lcd_pio_env.png)
