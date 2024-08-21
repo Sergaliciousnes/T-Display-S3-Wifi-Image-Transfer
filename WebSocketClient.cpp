@@ -43,8 +43,8 @@ TFT_eSprite text_sprite = TFT_eSprite(&tft);
 WiFiMulti WM;
 WebSocketsClient webSocket;
 
-const char* wifi_ssid     = "DSMode";
-const char* wifi_password = "1ktjhs2bo12qkcgm";
+const char* wifi_ssid     = "YourSSID";
+const char* wifi_password = "YourPassword";
 
 const char* ws_local_ip   = "192.168.1.115";
 
@@ -84,10 +84,16 @@ char menu_title[32] = {"Main Menu"};
 char menu_options[4][32] = {"Power", "Files", "Placeholder", "Exit"};
 
 char file_menu_title[32] = {"Files Menu"};
-char file_menu_options[6][32] = {"Load Flash", "Write Flash", "Load SPI", "Write SPI", "SPI Info", "Back"};
+char file_menu_options[6][32] = {"Load Flash", "Write Flash", "SPI", "Format", "Back"};
+
+char spi_menu_title[32] = {"SPI Menu"};
+char spi_menu_options[4][32] = {"Load SPI", "Write SPI", "SPI Info", "Back"};
 
 char select_menu_title[32];
 char select_menu_options[3][32] = {"+", "-", "Confirm"};
+
+char confirm_menu_title[32] = {"Confirm Menu"};
+char confirm_menu_options[3][32] = {"Yes", "No"};
 
 void moveText() {
     if (textIndex < max_console_size-1) return;
@@ -150,6 +156,7 @@ void draw_menu(char* menu_title, char menu_options[][32], uint8_t option_count) 
 void make_decision() {
     switch (menu_index) {
         case 1:
+            //main menu
             switch (menu_option_index) {
                 case 0:
                     //sleep mode
@@ -165,7 +172,7 @@ void make_decision() {
                     //enter file menu
                     menu_index = 2;
                     menu_option_index = 0;
-                    menu_option_count = 6;
+                    menu_option_count = 5;
                     break;
                 
                 case 2:
@@ -187,45 +194,83 @@ void make_decision() {
             break;
 
         case 2:
+            //file menu
             switch (menu_option_index) {
                 case 0:
                     //open load image menu
-                    menu_index = 3;
+                    menu_index = 4;
                     menu_option_index = 0;
                     menu_option_count = 3;
                     break;
                 case 1:
                     //open write image menu
-                    menu_index = 4;
+                    menu_index = 5;
                     menu_option_index = 0;
                     menu_option_count = 3;
                     break;
                 
                 case 2:
-                    //load image from SPI device
-                    load_image_over_spi();
+                    //Open SPI Menu
+                    menu_index = 3;
+                    menu_option_index = 0;
+                    menu_option_count = 4;
                     break;
+                    
+                    //load_image_over_spi();
                 
                 case 3:
-                    //write image to SPI device
-                    write_image_to_spi();
+                    //open confirm format menu
+                    menu_index = 6;
+                    menu_option_index = 1;
+                    menu_option_count = 2;
+
+                    //write_image_to_spi();
                     break;
                 case 4:
-                    //read status register
-                    read_status_register();
-                    break;
-                
-                case 5:
                     //return to submenu
                     menu_index -= 1;
                     menu_option_index = 0;
                     menu_option_count = 4;
                     break;
+
+                    //read status register
+                    //read_status_register();
+                    break;
             }
             break;
         
         case 3:
+            //spi menu
+            switch (menu_option_index) {
+                case 0:
+                    //load from spi
+                    load_image_over_spi();
+                    break;
+
+                case 1:
+                    //write to spi
+                    write_image_to_spi();
+                    break;
+                
+                case 2:
+                    //read spi status
+                    read_status_register();
+                    break;
+                
+                case 3:
+                    //return to submenu
+                    menu_index -= 1;
+                    menu_option_index = 2;
+                    menu_option_count = 5;
+                    break;
+            
+            }
+            break;
+        
         case 4:
+            //load image menu
+        case 5:
+            //write image menu
             switch (menu_option_index) {
                 case 0:
                     //increment file number
@@ -242,7 +287,7 @@ void make_decision() {
                 
                 case 2:
                     //comfirm and return to menu
-                    if (menu_index == 3) {
+                    if (menu_index == 4) {
                         //load image with number
                         sprintf(menu_filename, "/image%d", menu_filenum);
                         readFile(menu_filename);
@@ -254,9 +299,30 @@ void make_decision() {
 
                     menu_index = 2;
                     menu_option_index = 0;
-                    menu_option_count = 6;
+                    menu_option_count = 5;
                     break;
             }
+            break;
+        
+        case 6:
+            //confirm format menu
+            switch (menu_option_index) {
+                case 0:
+                    //format
+                    LittleFS.format();
+                    menu_index = 2;
+                    menu_option_index = 3;
+                    menu_option_count = 5;
+                    break;
+                
+                case 1:
+                    //return to menu
+                    menu_index = 2;
+                    menu_option_index = 3;
+                    menu_option_count = 5;
+                    break;
+            }
+            break;
     }
 }
 
@@ -406,17 +472,33 @@ void update_screen() {
             break;
         
         case 2:
-            draw_menu(file_menu_title, file_menu_options, 6);
+            draw_menu(file_menu_title, file_menu_options, 5);
             break;
         
         case 3:
-            sprintf(select_menu_title, "Load Image%d", menu_filenum);
-            draw_menu(select_menu_title, select_menu_options, 3);
+            draw_menu(spi_menu_title, spi_menu_options, 4);
             break;
         
         case 4:
+            sprintf(menu_filename, "/image%d", menu_filenum);
+
+            if (LittleFS.exists(menu_filename)) {
+                sprintf(select_menu_title, "Load Image%d*", menu_filenum);
+            } else {
+                sprintf(select_menu_title, "Load Image%d", menu_filenum);
+            }
+
+            draw_menu(select_menu_title, select_menu_options, 3);
+            break;
+        
+        case 5:
             sprintf(select_menu_title, "Write Image%d", menu_filenum);
             draw_menu(select_menu_title, select_menu_options, 3);
+            break;
+        
+        case 6:
+            sprintf(confirm_menu_title, "Format Flash?");
+            draw_menu(confirm_menu_title, confirm_menu_options, 2);
             break;
     
     }
@@ -520,66 +602,6 @@ void writeBinaryData(const char *path, const uint8_t *data, size_t size) {
         Serial.println("Failed to create binary file info");
         apendText("Failed to create binary file info");
     }
-}
-
-void listDir(fs::FS &fs, const char * dirname, uint8_t levels) {
-  Serial.printf("Listing directory: %s\r\n", dirname);
-
-  char textdata[255];
-  sprintf(textdata, "Listing directory: %s\r\n", dirname);
-  apendText(textdata);
-
-  update_screen();
-
-  fs::File root = fs.open(dirname);
-  if (!root) {
-    Serial.println("- failed to open directory");
-    apendText("- failed to open directory");
-    update_screen();
-    return;
-  }
-  if (!root.isDirectory()) {
-    Serial.println(" - not a directory");
-    apendText(" - not a directory");
-    update_screen();
-    return;
-  }
-
-  fs::File file = root.openNextFile();
-  while (file) {
-    if (file.isDirectory()) {
-      Serial.print("  DIR : ");
-      Serial.println(file.name());
-
-      char textdata[255];
-      sprintf(textdata, "  DIR : %s\r\n", file.name());
-      apendText(textdata);
-
-      update_screen();
-
-      if (levels) {
-        listDir(fs, file.name(), levels - 1);
-      }
-    } else {
-      Serial.print("  FILE: ");
-      Serial.print(file.name());
-
-      char textdata[255];
-      sprintf(textdata, "  FILE: %s\r\n", file.name());
-      apendText(textdata);
-
-      update_screen();
-
-      Serial.print("\tSIZE: ");
-      Serial.println(file.size());
-
-      sprintf(textdata, "  SIZE: %d\r\n", file.size());
-      apendText(textdata);
-
-      update_screen();
-    }
-    file = root.openNextFile();
-  }
 }
 
 const char* pcheck(uint8_t r, uint8_t c) {
