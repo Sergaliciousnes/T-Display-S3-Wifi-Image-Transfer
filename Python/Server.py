@@ -1,4 +1,4 @@
-# server.py created by S3RG / Sergalicious - 2024
+# newserver.py created by S3RG / Sergalicious - 2024
 import asyncio
 import websockets
 import threading
@@ -63,21 +63,6 @@ async def parse_image(ws, type, im):
         base.paste(im, ((max_width - im.width) // 2, (max_height - im.height) // 2))
 
         im = base
-    
-    if im.width < max_width:
-        base = Image.new('RGB', (max_width, im.height), 0)
-
-        base.paste(im, ((max_width - im.width) // 2, 0))
-
-        im = base
-
-    if im.height < max_height:  
-        base = Image.new('RGB', (im.width, max_height), 0)
-
-        base.paste(im, (0, (max_height - im.height) // 2))
-
-        im = base
-
 
     pixels = list(im.getdata())
 
@@ -153,47 +138,42 @@ async def run(session_id, ws, path):
                 await ws.close()
                 return
 
-        match session_type:
-            case "ESP" | "ESPA":
-                await ws.send(message)
+        args = message.split(" ")
 
-            case "MAIN":
-                args = message.split(" ")
+        match args[0].lower():
+            case "image":
+                if len(args) != 2:
+                    await ws.send("Usage: image <filename>")
+                    continue
 
-                match args[0].lower():
-                    case "image":
-                        if len(args) != 2:
-                            await ws.send("Usage: image <filename>")
-                            continue
-
-                        for session in sessions:
-                            other_session_type = sessions[session]["type"]
-                            if other_session_type in ["ESP", "ESPA"]:
-                                await image_from_file(sessions[session]['ws'], other_session_type, args[1])
+                for session in sessions:
+                    other_session_type = sessions[session]["type"]
+                    if other_session_type in ["ESP", "ESPA"]:
+                        await image_from_file(sessions[session]['ws'], other_session_type, args[1])
                     
-                    case "url":
-                        if len(args) != 2:
-                            await ws.send("Usage: url <fileurl>")
-                            continue
+            case "url":
+                if len(args) != 2:
+                    await ws.send("Usage: url <fileurl>")
+                    continue
                         
-                        for session in sessions:
-                            other_session_type = sessions[session]["type"]
-                            if other_session_type in ["ESP", "ESPA"]:
-                                await image_from_url(sessions[session]['ws'], other_session_type, args[1])
+                for session in sessions:
+                    other_session_type = sessions[session]["type"]
+                    if other_session_type in ["ESP", "ESPA"]:
+                        await image_from_url(sessions[session]['ws'], other_session_type, args[1])
                     
-                    case "list":
-                        if len(args) != 2:
-                            await ws.send("Usage: list sessions")
-                            continue
+            case "list":
+                if len(args) != 2:
+                    await ws.send("Usage: list sessions")
+                    continue
 
-                        if args[1] == "sessions":
-                            for session in sessions:
-                                await ws.send(f"{str(session)}: {str(sessions[session])}")
+                if args[1] == "sessions":
+                    for session in sessions:
+                        await ws.send(f"{str(session)}: {str(sessions[session])}")
                     
-                    case _:
-                        for session in sessions:
-                            if session != session_id:
-                                await sessions[session]["ws"].send(message)
+            case _:
+                for session in sessions:
+                    if session != session_id:
+                        await sessions[session]["ws"].send(message)
                     
 
 loop = asyncio.new_event_loop()
