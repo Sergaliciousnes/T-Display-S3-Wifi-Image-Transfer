@@ -54,6 +54,9 @@ uint8_t max_console_size = ((int)HEIGHT/9)+1;
 int time_since_last_activity = 0;
 
 uint16_t* ps_image;
+int memoffset = 0;
+int x_offset = 0;
+int y_offset = 0;
 
 OneButton button1(PIN_BUTTON_1, true);
 OneButton button2(PIN_BUTTON_2, true);
@@ -67,12 +70,12 @@ bool connected = false;
 
 uint8_t menu_index = 0;
 uint8_t menu_option_index = 0;
-uint8_t menu_option_count = 4;
+uint8_t menu_option_count = 5;
 
 uint8_t menu_filenum = 0;
 char menu_filename[32];
 
-int memoffset = 0;
+
 
 uint16_t image_width = 0;
 uint8_t image_height = 0;
@@ -81,7 +84,7 @@ bool image_loaded = false;
 
 //menu title and option strings
 char menu_title[32] = {"Main Menu"};
-char menu_options[4][32] = {"Power", "Files", "Placeholder", "Exit"};
+char menu_options[5][32] = {"Power", "Files", "Placeholder", "Send", "Exit"};
 
 char file_menu_title[32] = {"Files Menu"};
 char file_menu_options[6][32] = {"Load Flash", "Write Flash", "SPI", "Format", "Back"};
@@ -164,7 +167,15 @@ void make_decision() {
                     webSocket.setReconnectInterval(50000);
                     webSocket.disconnect();
                     WiFi.mode(WIFI_OFF);
-                    esp_sleep_enable_ext0_wakeup(GPIO_NUM_21, 0);
+
+                    #if defined(PLATFORM_LCD)
+                    digitalWrite(PIN_LCD_RES, LOW);
+                    #elif defined(PLATFORM_LCDA)
+                    digitalWrite(TFT_RES, LOW);
+                    #endif
+
+
+                    esp_sleep_enable_ext0_wakeup((gpio_num_t)PIN_BUTTON_2, 0);
                     esp_deep_sleep_start();
                     break;
                 
@@ -187,6 +198,11 @@ void make_decision() {
                     break;
                 
                 case 3:
+                    webSocket.sendTXT("Test");
+                    menu_index = 0;
+                    break;
+
+                case 4:
                     //close menu
                     menu_index = 0;
                     break;
@@ -230,7 +246,7 @@ void make_decision() {
                     //return to submenu
                     menu_index -= 1;
                     menu_option_index = 0;
-                    menu_option_count = 4;
+                    menu_option_count = 5;
                     break;
 
                     //read status register
@@ -326,6 +342,20 @@ void make_decision() {
     }
 }
 
+void set_offset() {
+    if (image_height < HEIGHT) {
+        y_offset = (int)((HEIGHT - image_height) / 2);
+    } else {
+        y_offset = 0;
+    }
+
+    if (image_width < WIDTH) {
+        x_offset = (int)((WIDTH - image_width) / 2);
+    } else {
+        x_offset = 0;
+    }
+}
+
 void hexdump(const void *mem, uint32_t len, uint8_t cols = 16) {
     const uint8_t* src = (const uint8_t*) mem;
 
@@ -340,6 +370,8 @@ void hexdump(const void *mem, uint32_t len, uint8_t cols = 16) {
             image_height = src[2];
             image_width = src[3] + src[4] + src[5];
             image_loaded = true;
+
+            set_offset();
 
             memoffset = 0;
 
@@ -449,7 +481,7 @@ void update_screen() {
     sprite.fillSprite(TFT_BLACK);
 
     if (image_loaded) {
-        sprite.pushImage(0, 0, image_width, image_height, ps_image);
+        sprite.pushImage(x_offset, y_offset, image_width, image_height, ps_image);
     }
 
     if (time_since_last_activity <= 40) {
@@ -468,7 +500,7 @@ void update_screen() {
     switch (menu_index) {
         
         case 1:
-            draw_menu(menu_title, menu_options, 4);
+            draw_menu(menu_title, menu_options, 5);
             break;
         
         case 2:
@@ -492,7 +524,14 @@ void update_screen() {
             break;
         
         case 5:
-            sprintf(select_menu_title, "Write Image%d", menu_filenum);
+            sprintf(menu_filename, "/image%d", menu_filenum);
+
+            if (LittleFS.exists(menu_filename)) {
+                sprintf(select_menu_title, "Write Image%d*", menu_filenum);
+            } else {
+                sprintf(select_menu_title, "Write Image%d", menu_filenum);
+            }
+            
             draw_menu(select_menu_title, select_menu_options, 3);
             break;
         
@@ -542,14 +581,15 @@ void readFile(const char *path) {
     if (file_info) {
         
         file_info.read((uint8_t*)info, 4);
+        file_info.close();
         
         image_height = info[0];
         //image_width = info[1] + info[2] + info[3];
         image_width = ((uint16_t)info[2] << 8) | info[1];
         image_loaded = true;
 
-        file_info.close();
-
+        set_offset();
+        
         apendText("Loaded image info");
 
     } else {
@@ -788,14 +828,7 @@ void screen_init() {
 }
 #endif
 
-void setup(void)
-{
-    Serial.begin(115200);
-    Serial.println("INIT");
-
-    screen_init();
-
-    //init spi
+void spif_init() {
     spif = new SPIClass(HSPI);
     spif->begin(12, 13, 11, 10);
 
@@ -804,6 +837,21 @@ void setup(void)
 
     pinMode(14, OUTPUT);
     digitalWrite(14, HIGH);
+}
+
+void setup(void)
+{
+    Serial.begin(115200);
+    Serial.println("INIT");
+
+
+    screen_init();
+
+    //init spi
+    #if defined(PLATFORM_LCDA)
+    spif_init();
+    #endif
+    
     
     sprite.createSprite(WIDTH, HEIGHT);
     sprite.setSwapBytes(1);
