@@ -2,6 +2,7 @@
 Transfer images to the T-Display S3 wirelessly, Cross compatible with both T-Display-S3 LCD and AMOLED.
 Integrated on-screen menu allows loading and saving up to 255 transfered images to the on board flash!
 
+![](images/example_send.gif)
 ![](images/demo.jpg)
 
 # Setup VSCode
